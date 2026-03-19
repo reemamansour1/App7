@@ -6,10 +6,8 @@ export const useAppStore = defineStore('appStore', () => {
   const usersArray = ref(users)
   const messagesArray = ref(messages)
   const currUsername = ref(null)
-  // only holds the user's username
 
   const currentUser = computed(()=> usersArray.value.find(u => u.username === currUsername.value))
-  // the whole user obj, {username, password, friends, incomingFQ, outgoingFQ}
 
   const friends = computed(() => currentUser.value ? currentUser.value.friends : [])
 
@@ -38,7 +36,6 @@ export const useAppStore = defineStore('appStore', () => {
     return true
   }
 
-
   function sendFriendReq(username){
     if(username === currUsername.value) return {success : false, error: "you cannot add yourself :)"}
     const targetUser = usersArray.value.find(u => u.username === username)
@@ -63,6 +60,7 @@ export const useAppStore = defineStore('appStore', () => {
     currentUser.value.friends.push(username)
     friend.friends.push(currUsername.value)
   }
+
   function rejectFQ(username){
     const friend = usersArray.value.find(u => u.username === username)
     currentUser.value.incomingFQ = currentUser.value.incomingFQ.filter(n => n !== username)

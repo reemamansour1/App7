@@ -8,8 +8,12 @@ const router = useRouter()
 const route = useRoute()
 
 const addInput = ref('')
+// friend's username to be added
+
 const addError = ref('')
+// error msg
 const addSuccess = ref('')
+// success msg
 
 function addFriend() {
   addError.value = ''
@@ -19,6 +23,7 @@ function addFriend() {
     addError.value = result.error
   } else {
     addSuccess.value = `Request sent!`
+    // to  reset the friend's username
     addInput.value = ''
   }
 }

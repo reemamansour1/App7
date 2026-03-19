@@ -1,6 +1,5 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
 import { useAppStore } from '@/stores/appStore.js'
-
 import LandingView from '@/views/LandingView.vue'
 import CreateAccountView from '@/views/CreateAccountView.vue'
 import SignInView from '@/views/SignInView.vue'
@@ -13,7 +12,16 @@ const router = createRouter({
     { path: '/create-account', component: CreateAccountView },
     { path: '/signin', component: SignInView},
     { path: '/home', component: HomeView },
-    { path: '/home/:friend', component: HomeView },
+    // /home/nonfriend? cancel -- done
+    {
+    path: '/home/:friend',
+    component: HomeView,
+    beforeEnter: (to) => {
+    const store = useAppStore()
+    if (!store.friends.includes(to.params.friend)) {
+      return { path: '/home' }
+    }
+  }},
     { path: '/:pathMatch(.*)*', redirect: '/' }
   ]
 })
