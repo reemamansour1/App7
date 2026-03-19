@@ -6,7 +6,11 @@ export const useAppStore = defineStore('appStore', () => {
   const usersArray = ref(users)
   const messagesArray = ref(messages)
   const currUsername = ref(null)
+  // only holds the user's username
+
   const currentUser = computed(()=> usersArray.value.find(u => u.username === currUsername.value))
+  // the whole user obj, {username, password, friends, incomingFQ, outgoingFQ}
+
   const friends = computed(() => currentUser.value ? currentUser.value.friends : [])
 
   function signIn(username, password){
@@ -45,10 +49,11 @@ export const useAppStore = defineStore('appStore', () => {
       return {success : false, error: "Already friends"}
     if(currentUser.value.outgoingFQ.includes(username))
       return {success : false, error: "Request already sent"}
+    if(currentUser.value.incomingFQ.includes(username))
+      return {success : false, error: "Already has a pending request from this user"}
     currentUser.value.outgoingFQ.push(username)
     targetUser.incomingFQ.push(currUsername.value)
     return{success: true}
-
   }
 
   function acceptFQ(username){
