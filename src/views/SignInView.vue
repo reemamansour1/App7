@@ -1,27 +1,41 @@
 <script setup>
-import {ref} from 'vue'
-import {useRouter} from 'vue-router'
-import { useAppStore } from '@/stores/appStore';
-import NavBar from '@/components/NavBar.vue';
+import { ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAppStore } from '@/stores/appStore'
+import NavBar from '@/components/NavBar.vue'
 
 const router = useRouter()
 const store = useAppStore()
 
-const isEmpty = ref(false);
+
+const isEmpty = ref(false)
 
 const username = ref('')
 const password = ref('')
 const error = ref(false)
 
-function signInHandler(){
-  // needed to reset it every time the user tries to submit again
+
+watch([username, password], () => {
+  if (store.accountCreated) {
+    store.accountCreated = false
+  }
+})
+
+async function signInHandler() {
   isEmpty.value = true
   error.value = false
-  const isAuthenticted = store.signIn(username.value, password.value)
-  if(!isAuthenticted){
+
+  if (!username.value.trim() || !password.value.trim()) {
+    return
+  }
+
+  const isAuthenticted = await store.signIn(username.value, password.value)
+
+  if (!isAuthenticted) {
     error.value = true
     return
   }
+
   router.push('/home')
 }
 </script>
@@ -31,6 +45,9 @@ function signInHandler(){
     <NavBar />
     <main class="form-container">
       <h2>Sign in to your account</h2>
+      <p v-if="store.accountCreated" class="success">
+        Account created! Please sign in.
+      </p>
       <form @submit.prevent="signInHandler">
         <div class="field">
           <label>Username</label>
@@ -81,7 +98,10 @@ form {
   border-radius: 10px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.08);
 }
-
+.success{
+  color: coral;
+  font-family: Georgia, 'Times New Roman', Times, serif;
+}
 label {
   display: block;
   font-family: Georgia, 'Times New Roman', Times, serif;

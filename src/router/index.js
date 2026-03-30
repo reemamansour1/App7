@@ -12,7 +12,7 @@ const router = createRouter({
     { path: '/create-account', component: CreateAccountView },
     { path: '/signin', component: SignInView},
     { path: '/home', component: HomeView },
-    // /home/nonfriend? cancel -- done
+    // /home/nonfriend? cancel
     {
     path: '/home/:friend',
     component: HomeView,

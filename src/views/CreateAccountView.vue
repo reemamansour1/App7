@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/appStore.js'
 import NavBar from '@/components/NavBar.vue'
@@ -7,42 +7,31 @@ import NavBar from '@/components/NavBar.vue'
 const router = useRouter()
 const store = useAppStore()
 
+const firstName = ref('')
+const lastName = ref('')
 const username = ref('')
+const email = ref('')
 const password = ref('')
-const error = ref('')
+const errors = ref([])
 
-const usernameRules = computed(() => {
-  const rules = []
-  if (username.value.length < 5)
-    rules.push('Must have at least 5 characters')
-  if (username.value.length === 0 || !/^[a-zA-Z]/.test(username.value))
-    rules.push('Must begin with a letter')
-  if (username.value.length === 0 || !/^[a-zA-Z0-9]*$/.test(username.value))
-    rules.push('Can only contain letters and numbers')
-  return rules
-})
+async function CreateAccountHandler() {
+  errors.value = []
 
-const passwordRules = computed(() => {
-  const rules = []
-  if (password.value.length < 6)
-    rules.push('Must have at least 6 characters')
-  if (password.value.length === 0 || !/[a-z]/.test(password.value))
-    rules.push('Must have 1 lowercase character')
-  if (password.value.length === 0 || !/[0-9]/.test(password.value))
-    rules.push('Must have 1 number')
-  return rules
-})
+  const result = await store.createAccount({
+    firstName: firstName.value,
+    lastName: lastName.value,
+    username: username.value,
+    email: email.value,
+    password: password.value
+  })
 
-const isValid = computed(() => {
-  return usernameRules.value.length === 0 && passwordRules.value.length === 0
-})
-
-function CreateAccountHandler() {
-  error.value = ''
-  if (!isValid.value) return
-  const isCreated = store.createAccount(username.value, password.value)
-  if (!isCreated) { error.value = 'Username already taken'; return }
-  router.push('/home')
+  if (!result.success) {
+    errors.value = result.errors
+    return
+  }
+  // change the value so it could show, account created
+  store.accountCreated = true;
+  router.push('/signin')
 }
 </script>
 
@@ -50,36 +39,33 @@ function CreateAccountHandler() {
   <div>
     <NavBar />
     <div class="container">
-
       <form @submit.prevent="CreateAccountHandler">
         <h2>Create Account</h2>
+        <div class="field">
+          <label>First Name</label>
+          <input v-model="firstName" type="text" placeholder="Enter first name" autocomplete="nope" />
+        </div>
+        <div class="field">
+          <label>Last Name</label>
+          <input v-model="lastName" type="text" placeholder="Enter last name" autocomplete="nope" />
+        </div>
         <div class="field">
           <label>Username</label>
           <input v-model="username" type="text" placeholder="Enter username" autocomplete="nope" />
         </div>
         <div class="field">
+          <label>Email</label>
+          <input v-model="email" type="email" placeholder="Enter email" autocomplete="nope" />
+        </div>
+        <div class="field">
           <label>Password</label>
           <input v-model="password" type="password" placeholder="Enter password" autocomplete="new-password" />
         </div>
-        <p v-if="error" class="error">{{ error }}</p>
-        <button type="submit" :disabled="!isValid">Create Account</button>
+        <ul v-if="errors.length > 0" class="errors">
+          <li v-for="error in errors" :key="error">{{ error }}</li>
+        </ul>
+        <button type="submit">Create Account</button>
       </form>
-
-      <div class="rules" v-if="usernameRules.length > 0 || passwordRules.length > 0">
-        <div v-if="usernameRules.length > 0">
-          <p class="rule">Username</p>
-          <ul>
-            <li v-for="rule in usernameRules" :key="rule">{{ rule }}</li>
-          </ul>
-        </div>
-        <div v-if="passwordRules.length > 0">
-          <p class="rule">Password</p>
-          <ul>
-            <li v-for="rule in passwordRules" :key="rule">{{ rule }}</li>
-          </ul>
-        </div>
-      </div>
-
     </div>
   </div>
 </template>
@@ -148,38 +134,15 @@ button {
   transition: background 0.2s;
 }
 
-button:hover:not(:disabled) {
+button:hover {
   background-color: #2a8f8f;
 }
 
-button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
-
-.error {
-  color: red;
-  font-size: 13px;
-}
-
-.rules {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.rule {
-  color: red;
-  font-size: 13px;
-  margin-bottom: 4px;
-  font-family: Georgia, 'Times New Roman', Times, serif;
-}
-
-ul {
+.errors {
   list-style: disc;
   padding-left: 18px;
   color: red;
   font-size: 12px;
   font-family: Georgia, 'Times New Roman', Times, serif;
 }
-</style>
+</style>n
