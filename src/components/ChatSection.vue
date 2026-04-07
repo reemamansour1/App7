@@ -11,12 +11,8 @@ const newMessage = ref('')
 const friendUsername = computed(() => {
   const friend = route.params.friend ?? null
   if (!friend) return null
-  if (!store.friends.includes(friend)) return null
   return friend
 })
-
-// bug: check the friends list before rendering anything
-//   if (!store.friends.includes(friend)) return null
 
 const messages = computed(() =>
   friendUsername.value ? store.getMsg(friendUsername.value) : []
@@ -41,7 +37,6 @@ function sendMessage() {
         <h3>Chat with {{ friendUsername }}</h3>
       </div>
 
-
       <div class="messages">
         <div
           v-for="(msg, i) in messages"
@@ -53,8 +48,6 @@ function sendMessage() {
         </div>
         <p v-if="messages.length === 0" class="empty">No messages yet. Say hello!</p>
       </div>
-
-
 
       <div class="input-section">
         <input

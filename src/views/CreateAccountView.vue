@@ -16,7 +16,7 @@ const errors = ref([])
 
 async function CreateAccountHandler() {
   errors.value = []
-
+  // pass the user object
   const result = await store.createAccount({
     firstName: firstName.value,
     lastName: lastName.value,
@@ -24,7 +24,7 @@ async function CreateAccountHandler() {
     email: email.value,
     password: password.value
   })
-
+  // result is the response of the fetch fuction? and it like a obj that has properties like success?
   if (!result.success) {
     errors.value = result.errors
     return
@@ -132,6 +132,8 @@ button {
   font-family: Georgia, 'Times New Roman', Times, serif;
   font-weight: 500;
   transition: background 0.2s;
+  box-shadow: 0 5px 5px rgba(0, 0, 0, 0.2);
+
 }
 
 button:hover {

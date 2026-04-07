@@ -1,21 +1,12 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 
 export const useAppStore = defineStore('appStore', () => {
   const host = 'https://stingray-app-u3bsh.ondigitalocean.app'
 
-  const accountCreated = ref(false);
-  const usersArray = ref([])
-  const messagesArray = ref([])
+  const accountCreated = ref(false)
   const currUsername = ref(null)
-
-  const currentUser = computed(() =>
-    usersArray.value.find(u => u.username === currUsername.value)
-  )
-
-  const friends = computed(() =>
-    currentUser.value ? currentUser.value.friends : []
-  )
+  const messagesArray = ref([])
 
   async function signIn(username, password) {
     const url = host + '/user/login'
@@ -24,19 +15,12 @@ export const useAppStore = defineStore('appStore', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     }
-
     try {
       const response = await fetch(url, options)
-
       if (!response.ok) return false
-
       const signedInUser = await response.json()
-
       currUsername.value = signedInUser.user.username
-
-      //signedInUser.firstName is undefined, there is a property called user that has firstname, lastname....
-      console.log(' user signed in is :', signedInUser.user.firstName)
-
+      localStorage.setItem('authToken', signedInUser.authToken)
       return true
     } catch (error) {
       console.log(error)
@@ -51,84 +35,148 @@ export const useAppStore = defineStore('appStore', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(user)
     }
-
     try {
       const res = await fetch(url, options)
-
       if (!res.ok) {
         const result = await res.json()
-
         switch (res.status) {
           case 400:
             return {
               success: false,
               errors: Object.values(result.errors).map(err => err.message)
             }
-
           case 409:
             return {
               success: false,
-              errors: ['Username or email already taken']
+              errors: ['username or email already taken']
             }
         }
-
-        return { success: false, errors: ['Something went wrong'] }
-
+        return { success: false, errors: ['something went wrong'] }
       }
-      console.log('New user created:', user)
       return { success: true }
-
     } catch (error) {
       console.log(error)
-      return { success: false, errors: ['Network error'] }
+      return { success: false, errors: ['network error'] }
     }
+  }
 
+  async function getUserInfo() {
+    const url = host + '/user'
+    const token = localStorage.getItem('authToken')
+    const options = {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}` }
+    }
+    try {
+      const response = await fetch(url, options)
+      if (!response.ok) return null
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.log(error)
+      return null
+    }
   }
 
   function signOut() {
     currUsername.value = null
+    localStorage.removeItem('authToken')
   }
 
-  function sendFriendReq(username) {
-    if (username === currUsername.value)
-      return { success: false, error: "you cannot add yourself :)" }
-
-    const targetUser = usersArray.value.find(u => u.username === username)
-
-    if (!targetUser) {
-      return { success: false, error: "User not found" }
+  async function findUsers(search) {
+    if (!search) return []
+    const url = host + `/users?search=${search}&limit=10&skip=0&sortBy=username:asc`
+    const token = localStorage.getItem('authToken')
+    const options = {
+      method: 'GET',
+      headers :  {
+        'Authorization': `Bearer ${token}`
+      }
     }
-
-    if (currentUser.value.friends.includes(username))
-      return { success: false, error: "Already friends" }
-
-    if (currentUser.value.outgoingFQ.includes(username))
-      return { success: false, error: "Request already sent" }
-
-    if (currentUser.value.incomingFQ.includes(username))
-      return { success: false, error: "Already has a pending request from this user" }
-
-    currentUser.value.outgoingFQ.push(username)
-    targetUser.incomingFQ.push(currUsername.value)
-
-    return { success: true }
+    try {
+      const response = await fetch(url, options)
+      if (!response.ok) return []
+      const data = await response.json()
+      console.log("FindUsers function", data.users)
+      return data.users || []
+      // it is going return the object that has _id inside each user's object
+    } catch (error) {
+      console.log(error)
+      return []
+    }
   }
 
-  function acceptFQ(username) {
-    const friend = usersArray.value.find(u => u.username === username)
-
-    currentUser.value.incomingFQ = currentUser.value.incomingFQ.filter(n => n !== username)
-    friend.outgoingFQ = friend.outgoingFQ.filter(n => n !== currUsername.value)
-
-    currentUser.value.friends.push(username)
-    friend.friends.push(currUsername.value)
+  async function sendFriendRequest(userId) {
+    const url = host + `/friend-request/${userId}`
+    const token = localStorage.getItem('authToken')
+    const options = {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${token}` }
+    }
+    try {
+      const response = await fetch(url, options)
+      if (!response.ok) {
+        const result = await response.json()
+        return { success: false, error: result.message || 'Could not send request' }
+      }
+      return { success: true }
+    } catch (error) {
+      console.log(error)
+      return { success: false, error: 'Network error' }
+    }
   }
 
-  function rejectFQ(username) {
-    const friend = usersArray.value.find(u => u.username === username)
+  async function acceptDeclineFriendRequest(requestId, accept) {
+    const url = host + `/friend-request/${requestId}?accept=${accept}`
+    const token = localStorage.getItem('authToken')
+    const options = {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${token}` }
+    }
+    try {
+      const response = await fetch(url, options)
+      if (!response.ok) return { success: false }
+      const data = await response.json()
+      return { success: true, data }
+    } catch (error) {
+      console.log(error)
+      return { success: false }
+    }
+  }
 
-    currentUser.value.incomingFQ = currentUser.value.incomingFQ.filter(n => n !== username)
-    friend.outgoingFQ = friend.outgoingFQ.filter(n => n !== currUsername.value)
+  async function getFriendRequests() {
+    const url = host + '/friend-requests'
+    const token = localStorage.getItem('authToken')
+    const options = {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${token}` }
+    }
+    try {
+      const response = await fetch(url, options)
+      if (!response.ok) return []
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.log(error)
+      return []
+    }
+  }
+
+  async function removeFriend(userId) {
+    const url = host + `/friend/${userId}`
+    const token = localStorage.getItem('authToken')
+    const options = {
+      method: 'DELETE',
+      headers: { 'Authorization': `Bearer ${token}` }
+    }
+    try {
+      const response = await fetch(url, options)
+      if (!response.ok) return { success: false }
+      return { success: true }
+    } catch (error) {
+      console.log(error)
+      return { success: false }
+    }
   }
 
   function getMsg(username) {
@@ -147,19 +195,11 @@ export const useAppStore = defineStore('appStore', () => {
   }
 
   return {
-    usersArray,
-    messagesArray,
-    currentUser,
-    currUsername,
-    friends,
-    signIn,
-    signOut,
-    createAccount,
-    sendFriendReq,
-    acceptFQ,
-    rejectFQ,
-    getMsg,
-    sendMsg,
-    accountCreated
+    currUsername, accountCreated, messagesArray,
+    signIn, signOut, createAccount,
+    getUserInfo, findUsers,
+    sendFriendRequest, acceptDeclineFriendRequest,
+    getFriendRequests, removeFriend,
+    getMsg, sendMsg
   }
 })

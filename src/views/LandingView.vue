@@ -29,7 +29,7 @@ main {
 h4{
   font-family: Georgia, 'Times New Roman', Times, serif;
   color: #025269;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .logo {

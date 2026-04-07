@@ -15,13 +15,8 @@ const router = createRouter({
     // /home/nonfriend? cancel
     {
     path: '/home/:friend',
-    component: HomeView,
-    beforeEnter: (to) => {
-    const store = useAppStore()
-    if (!store.friends.includes(to.params.friend)) {
-      return { path: '/home' }
-    }
-  }},
+    component: HomeView
+  },
     { path: '/:pathMatch(.*)*', redirect: '/' }
   ]
 })

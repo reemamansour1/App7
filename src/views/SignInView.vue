@@ -24,18 +24,17 @@ watch([username, password], () => {
 async function signInHandler() {
   isEmpty.value = true
   error.value = false
-
   if (!username.value.trim() || !password.value.trim()) {
     return
   }
-
   const isAuthenticted = await store.signIn(username.value, password.value)
-
   if (!isAuthenticted) {
     error.value = true
     return
   }
-
+  const data = await store.getUserInfo();
+  console.log("username" + data.username)
+  console.log("email" + data.email)
   router.push('/home')
 }
 </script>
@@ -99,7 +98,7 @@ form {
   box-shadow: 0 2px 12px rgba(0,0,0,0.08);
 }
 .success{
-  color: coral;
+  color: green;
   font-family: Georgia, 'Times New Roman', Times, serif;
 }
 label {
@@ -135,6 +134,7 @@ button {
   font-family: Georgia, 'Times New Roman', Times, serif;
   font-weight: 500;
   transition: background 0.2s;
+  box-shadow: 0 5px 5px rgba(0, 0, 0, 0.2);
 }
 
 button:hover {
