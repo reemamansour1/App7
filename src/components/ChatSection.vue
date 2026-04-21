@@ -1,7 +1,11 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/appStore.js'
+
+onUnmounted(() => {
+  if (pollInterval) clearInterval(pollInterval)
+})
 
 const store = useAppStore()
 const route = useRoute()
@@ -30,17 +34,27 @@ function getSenderInitials(senderId) {
   return username[0]?.toUpperCase() || '?'
 }
 
+let pollInterval = null
 // runs when chatId changes --- rmansour clicking different chat
-//  also runs on first load
+
 watch(chatId, async (newChatId) => {
+  if (pollInterval) clearInterval(pollInterval)
   if (!newChatId) return
   inviteError.value = ''
   inviteSuccess.value = ''
   newMessage.value = ''
   showInvitePopup.value = false
+
   const result = await store.getChatInfo(newChatId)
-  if (result.success) chatInfo.value = result.data // full chat object
+  if (result.success) chatInfo.value = result.data
   messages.value = await store.getChatMessages(newChatId)
+
+  // refetch every 2 sec
+  pollInterval = setInterval(async () => {
+    const result = await store.getChatInfo(newChatId)
+    if (result.success) chatInfo.value = result.data
+    messages.value = await store.getChatMessages(newChatId)
+  }, 2000)
 }, { immediate: true })
 
 async function sendMessage() {

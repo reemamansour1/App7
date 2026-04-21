@@ -4,9 +4,9 @@ import { ref } from 'vue'
 export const useAppStore = defineStore('appStore', () => {
   const host = 'https://stingray-app-u3bsh.ondigitalocean.app'
   const accountCreated = ref(false)
-  const currUsername = ref(null)
   const messagesArray = ref([])
-  const currUserId = ref(null)
+  const currUsername = ref(localStorage.getItem('currUsername'))
+  const currUserId = ref(localStorage.getItem('currUserId'))
   const chatSessions = ref([])
 
   async function loadChatSessions() {
@@ -42,6 +42,8 @@ export const useAppStore = defineStore('appStore', () => {
         currUsername.value = signedInUser.user.username
         currUserId.value = signedInUser.user._id
         localStorage.setItem('authToken', signedInUser.authToken)
+        localStorage.setItem('currUsername', signedInUser.user.username)
+        localStorage.setItem('currUserId', signedInUser.user._id)
         return true
       } catch (error) {
         console.log(error)
@@ -107,6 +109,8 @@ export const useAppStore = defineStore('appStore', () => {
     currUsername.value = null
     currUserId.value = null
     localStorage.removeItem('authToken')
+    localStorage.removeItem('currUsername')
+    localStorage.removeItem('currUserId')
   }
 
   async function findUsers(search) {
