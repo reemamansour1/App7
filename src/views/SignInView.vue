@@ -1,19 +1,21 @@
 <script setup>
-import { ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, watch } from 'vue'
+import { useRouter, RouterLink } from 'vue-router'
 import { useAppStore } from '@/stores/appStore'
 import NavBar from '@/components/NavBar.vue'
 
 const router = useRouter()
 const store = useAppStore()
 
-
 const isEmpty = ref(false)
-
 const username = ref('')
 const password = ref('')
 const error = ref(false)
+const showPassword = ref(false)
 
+const isValid = computed(() => {
+  return username.value.trim().length > 0 && password.value.trim().length > 0
+})
 
 watch([username, password], () => {
   if (store.accountCreated) {
@@ -24,17 +26,12 @@ watch([username, password], () => {
 async function signInHandler() {
   isEmpty.value = true
   error.value = false
-  if (!username.value.trim() || !password.value.trim()) {
-    return
-  }
-  const isAuthenticted = await store.signIn(username.value, password.value)
-  if (!isAuthenticted) {
+  if (!isValid.value) return
+  const isAuthenticated = await store.signIn(username.value, password.value)
+  if (!isAuthenticated) {
     error.value = true
     return
   }
-  const data = await store.getUserInfo();
-  console.log("username" + data.username)
-  console.log("email" + data.email)
   router.push('/home')
 }
 </script>
@@ -52,13 +49,29 @@ async function signInHandler() {
           <label>Username</label>
           <input v-model="username" type="text" placeholder="Enter username" autocomplete="nope" />
         </div>
+
         <div class="field">
-          <label>Password</label>
-          <input v-model="password" type="password" placeholder="Enter password" autocomplete="new-password"/>
+          <div class="label-row">
+            <label>Password</label>
+            <label class="toggle">
+              <input type="checkbox" v-model="showPassword" />
+              <span class="slider"></span>
+            </label>
+          </div>
+          <input
+            v-model="password"
+            :type="showPassword ? 'text' : 'password'"
+            placeholder="Enter password"
+            autocomplete="new-password"
+          />
         </div>
-        <p v-if="isEmpty && (!username.trim() || !password.trim())" class="error">Username or password cannot be empty</p>
+
+        <p v-if="isEmpty && !isValid" class="error">Username and password cannot be empty</p>
         <p v-else-if="error" class="error">Invalid username or password</p>
-        <button type="submit">Sign In</button>
+
+        <p class="switch-link">Don't have an account? <RouterLink to="/create-account"> Create one</RouterLink></p>
+
+        <button type="submit" :disabled="!isValid">Sign In</button>
       </form>
     </main>
   </div>
@@ -67,6 +80,12 @@ async function signInHandler() {
 <style scoped>
 .error {
   color: red;
+  font-family: Georgia, 'Times New Roman', Times, serif;
+  font-size: 13px;
+}
+
+.success {
+  color: green;
   font-family: Georgia, 'Times New Roman', Times, serif;
 }
 
@@ -97,33 +116,73 @@ form {
   border-radius: 10px;
   box-shadow: 0 2px 12px rgba(0,0,0,0.08);
 }
-.success{
-  color: green;
-  font-family: Georgia, 'Times New Roman', Times, serif;
-}
+
 label {
   display: block;
   font-family: Georgia, 'Times New Roman', Times, serif;
   color: #025269;
-  margin-bottom: 6px;
   font-size: 14px;
 }
 
-input {
+.label-row {
+  display: flex;
+  justify-content: space-between;
+
+}
+
+input[type="text"],
+input[type="password"] {
   width: 100%;
   padding: 9px 12px;
   border: 1px solid #ccc;
   border-radius: 6px;
   font-size: 14px;
   font-family: Georgia, 'Times New Roman', Times, serif;
+  box-sizing: border-box;
 }
 
-input:focus {
+input[type="text"]:focus,
+input[type="password"]:focus {
   outline: none;
   border-color: #025269;
 }
 
-button {
+.toggle input {
+  display: none;
+}
+
+.toggle .slider {
+  display: block;
+  width: 34px;
+  height: 20px;
+  background-color: #ccc;
+  border-radius: 20px;
+  cursor: pointer;
+  position: relative;
+  transition: background-color 0.2s;
+}
+
+.toggle .slider::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background-color: white;
+  border-radius: 50%;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.2s;
+}
+
+.toggle input:checked + .slider {
+  background-color: #025269;
+}
+
+.toggle input:checked + .slider::before {
+  transform: translateX(14px);
+}
+
+button[type="submit"] {
   padding: 10px;
   background-color: #025269;
   color: white;
@@ -134,10 +193,30 @@ button {
   font-family: Georgia, 'Times New Roman', Times, serif;
   font-weight: 500;
   transition: background 0.2s;
-  box-shadow: 0 5px 5px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 5px 5px rgba(0,0,0,0.2);
 }
 
-button:hover {
+button[type="submit"]:hover:not(:disabled) {
   background-color: #2a8f8f;
+}
+
+button[type="submit"]:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.switch-link {
+  font-size: 14px;
+  color: #555;
+  font-family: Georgia, 'Times New Roman', Times, serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.switch-link a {
+  color: #025269;
+  font-weight: 500;
 }
 </style>
